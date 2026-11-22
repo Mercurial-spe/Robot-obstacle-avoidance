@@ -1,54 +1,7 @@
-# Directory Structure
+# Frontend Directory Structure
 
-> How frontend code is organized in this project.
+See the [frontend directory map](../../../docs/ARCHITECTURE.md#前端) for the paths and responsibilities created in the initial repository structure.
 
----
+Keep REST and WebSocket access in `src/api/`. Let session hooks manage subscriptions. Canvas and components render backend state and forward user actions.
 
-## Overview
-
-<!--
-Document your project's frontend directory structure here.
-
-Questions to answer:
-- Where do components live?
-- How are features/modules organized?
-- Where are shared utilities?
-- How are assets organized?
--->
-
-(To be filled by the team)
-
----
-
-## Directory Layout
-
-```
-<!-- Replace with your actual structure -->
-src/
-├── ...
-└── ...
-```
-
----
-
-## Module Organization
-
-<!-- How should new features be organized? -->
-
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- File and folder naming rules -->
-
-(To be filled by the team)
-
----
-
-## Examples
-
-<!-- Link to well-organized modules as examples -->
-
-(To be filled by the team)
+Follow the [project specification](../../../docs/robot_navigation_workbench_spec.md) for stage order and acceptance criteria.

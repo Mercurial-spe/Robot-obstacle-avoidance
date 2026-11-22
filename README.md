@@ -4,16 +4,11 @@
 
 ## 项目结构
 
-当前仓库处于初始化阶段。下表中的应用目录会随第一个可运行版本建立。
+当前仓库已建立目录骨架。前后端脚手架和依赖会随 P0 建立。
 
-| 路径 | 职责 |
-| --- | --- |
-| `backend/app/simulation/` | 按固定时间步更新小车与障碍物，判定碰撞及到达 |
-| `backend/app/algorithms/` | A*、人工势场法及后续改进，共用运动和碰撞规则 |
-| `backend/app/scenarios/`、`backend/app/experiments/` | 预设场景、批量实验、指标与数据导出 |
-| `backend/app/api/`、`backend/tests/` | FastAPI 接口、WebSocket 状态流及仿真测试 |
-| `frontend/src/` | React 操作界面、Konva 仿真画布及 Recharts 实验图表 |
-| [项目规格](docs/robot_navigation_workbench_spec.md)、[项目术语](GLOSSARY.md) | 项目目标、验收标准、阶段顺序与术语 |
+- [项目规格](docs/robot_navigation_workbench_spec.md)说明课程要求、开发阶段与验收标准。
+- [架构与目录](docs/ARCHITECTURE.md)说明仿真、算法、实验、API 和前端的职责。
+- [项目术语](GLOSSARY.md)说明场景、实验运行和避障成功的含义。
 
 先跑通静态场景的 A* 和真实运动，再加入动态障碍物、人工势场法和可复现的对比实验。后端负责仿真状态与实验指标。前端负责场景操作、轨迹和算法决策的可视化。
 

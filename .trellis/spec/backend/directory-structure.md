@@ -1,54 +1,7 @@
-# Directory Structure
+# Backend Directory Structure
 
-> How backend code is organized in this project.
+See the [backend directory map](../../../docs/ARCHITECTURE.md#后端) for the paths and responsibilities created in the initial repository structure.
 
----
+Keep simulation and batch runners callable from Python without FastAPI. Select concrete planners at the application boundary. Map internal state into request and response schemas in the API layer.
 
-## Overview
-
-<!--
-Document your project's backend directory structure here.
-
-Questions to answer:
-- How are modules/packages organized?
-- Where does business logic live?
-- Where are API endpoints defined?
-- How are utilities and helpers organized?
--->
-
-(To be filled by the team)
-
----
-
-## Directory Layout
-
-```
-<!-- Replace with your actual structure -->
-src/
-├── ...
-└── ...
-```
-
----
-
-## Module Organization
-
-<!-- How should new features/modules be organized? -->
-
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- File and folder naming rules -->
-
-(To be filled by the team)
-
----
-
-## Examples
-
-<!-- Link to well-organized modules as examples -->
-
-(To be filled by the team)
+Follow the [project specification](../../../docs/robot_navigation_workbench_spec.md) for stage order and acceptance criteria.
