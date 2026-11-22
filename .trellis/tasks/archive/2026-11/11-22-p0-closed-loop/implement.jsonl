@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend guidelines entry point"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Where simulation/algorithms/api code goes"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "RunStatus-as-data convention and API error body"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Determinism, units, forbidden patterns"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Logging conventions for session lifecycle"}

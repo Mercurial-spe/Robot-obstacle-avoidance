@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Review standards and forbidden patterns"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Check failures are recorded, not swallowed"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend review checklist"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type mirror conventions"}
