@@ -21,9 +21,14 @@ the rest conversationally.
 
 ## Status (update the checkboxes as you complete each item)
 
-- [ ] Fill backend guidelines
-- [ ] Fill frontend guidelines
-- [ ] Add code examples
+- [x] Fill backend guidelines
+- [x] Fill frontend guidelines
+- [x] Add code examples
+
+> Filled 2026-11-22 from `AGENTS.md`, `docs/robot_navigation_workbench_spec.md` and
+> `docs/ARCHITECTURE.md`. The repo had no source code yet, so the specs document the
+> conventions the project spec mandates; the P0 implementation is expected to land the
+> first reference examples and update these files where reality differs.
 
 ---
 
