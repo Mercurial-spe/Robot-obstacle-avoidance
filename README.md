@@ -18,7 +18,10 @@
 - Python 3.11 或更高版本和 `uv`
 - Node.js 24 LTS 和 npm
 
-后端依赖由 `backend/pyproject.toml` 与 `backend/uv.lock` 管理，前端依赖由 `frontend/package.json` 与 `frontend/package-lock.json` 管理。应用脚手架完成后，在两个终端分别运行以下命令。
+后端依赖由 `backend/pyproject.toml` 与 `backend/uv.lock` 管理，前端依赖由 `frontend/package.json` 与 `frontend/package-lock.json` 管理。在两个终端分别运行以下命令。
+
+> 国内网络下 `uv sync` 可能长时间无响应，可改用镜像源：
+> `uv sync --default-index https://pypi.tuna.tsinghua.edu.cn/simple`。
 
 ```sh
 cd backend

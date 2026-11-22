@@ -28,3 +28,20 @@
 /docs/ppt/autonomous\ mobile\ robots\ 202610230834.pdf
 /docs/ppt/autonomous\ mobile\ robots\ 202610281030.pdf
 /docs/ppt/autonomous\ mobile\ robots\ autonomous\ mobile\ robots\ 202610211030.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Experiment exports
+backend/exports/
+
+# Trellis local state
+.trellis/.developer
+.trellis/.runtime/
