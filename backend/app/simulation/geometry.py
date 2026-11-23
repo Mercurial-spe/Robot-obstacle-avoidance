@@ -40,12 +40,18 @@ def circle_overlaps_circle(
 def circle_overlaps_rect(
     center: Vec2, radius: float, min_x: float, min_y: float, max_x: float, max_y: float
 ) -> bool:
-    """Circle vs axis-aligned rectangle, using the closest-point distance."""
+    """Circle vs axis-aligned rectangle, using the closest-point distance.
+
+    Uses ``<=`` so a zero-radius point check (the engine's center-based
+    collision, with the robot radius handled by planner-side inflation) still
+    reports a hit when the center lies inside the rectangle: distance 0 must
+    count as overlapping.
+    """
     closest_x = clamp(center.x, min_x, max_x)
     closest_y = clamp(center.y, min_y, max_y)
     dx = center.x - closest_x
     dy = center.y - closest_y
-    return dx * dx + dy * dy < radius * radius
+    return dx * dx + dy * dy <= radius * radius
 
 
 def point_in_arena(point: Vec2, radius: float, width: float, height: float) -> bool:

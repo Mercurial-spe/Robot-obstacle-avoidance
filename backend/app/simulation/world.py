@@ -6,6 +6,11 @@ import math
 from dataclasses import dataclass, field
 from enum import Enum
 
+from app.simulation.dynamic import (
+    DynamicCircleObstacle,
+    DynamicObstacle,
+    DynamicRectObstacle,
+)
 from app.simulation.geometry import (
     Vec2,
     circle_overlaps_circle,
@@ -46,7 +51,7 @@ class RectObstacle:
         return self.y + self.height
 
 
-Obstacle = CircleObstacle | RectObstacle
+Obstacle = CircleObstacle | RectObstacle | DynamicObstacle
 
 
 @dataclass(slots=True)
@@ -93,13 +98,22 @@ class World:
         if not point_in_arena(position, effective, self.width, self.height):
             return False
         for obstacle in self.obstacles:
-            if isinstance(obstacle, CircleObstacle):
+            if isinstance(obstacle, (CircleObstacle, DynamicCircleObstacle)):
                 if circle_overlaps_circle(position, effective, Vec2(obstacle.cx, obstacle.cy), obstacle.radius):
                     return False
-            else:
+            elif isinstance(obstacle, (RectObstacle, DynamicRectObstacle)):
                 if circle_overlaps_rect(position, effective, obstacle.x, obstacle.y, obstacle.max_x, obstacle.max_y):
                     return False
         return True
+
+    def update_dynamic_obstacles(self, t: float) -> None:
+        """Place every dynamic obstacle at its pose for simulation time ``t``.
+
+        Poses are a pure function of ``t``, so this is reproducible.
+        """
+        for obstacle in self.obstacles:
+            if isinstance(obstacle, (DynamicCircleObstacle, DynamicRectObstacle)):
+                obstacle.update(t)
 
     # -- stepping -----------------------------------------------------------
 
@@ -115,8 +129,12 @@ class World:
         if speed > 0.0:
             n_sub = max(1, math.ceil(speed * dt / self.params.max_collision_step))
         sub_dt = dt / n_sub
+        t0 = self.sim_time
         state = self.robot
-        for _ in range(n_sub):
+        for index in range(1, n_sub + 1):
+            # Dynamic obstacles advance first, interpolated to this substep's
+            # time, so a fast-moving obstacle cannot skip over the robot.
+            self.update_dynamic_obstacles(t0 + index * sub_dt)
             state = apply_command(state, command, self.limits, sub_dt)
             if not self._check_collision(state.position):
                 self.robot = state
@@ -124,8 +142,8 @@ class World:
                 self.status = RunStatus.COLLIDED
                 return self.status
             self.robot = state
+        self.sim_time = t0 + dt
         self.distance_traveled += speed * dt
-        self.sim_time += dt
         self._update_end_conditions()
         return self.status
 

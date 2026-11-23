@@ -7,6 +7,7 @@ import math
 import time
 
 from app.algorithms.base import PlanResult, WorldView
+from app.simulation.dynamic import DynamicCircleObstacle, DynamicRectObstacle
 from app.simulation.geometry import Vec2
 from app.simulation.robot import RobotState
 from app.simulation.world import CircleObstacle, RectObstacle
@@ -19,6 +20,11 @@ class AStarPlanner:
 
     def __init__(self, safety_margin: float = 0.15) -> None:
         self.safety_margin = safety_margin
+        # Memory of the most recent search, exposed by /plan-info. The grid is
+        # row-major over the arena at GRID_RESOLUTION; expanded cells are in
+        # pop (expansion) order.
+        self.last_grid: tuple[list[bool], int, int] | None = None
+        self.last_expanded: list[tuple[int, int]] = []
 
     # -- grid construction --------------------------------------------------
 
@@ -48,7 +54,9 @@ class AStarPlanner:
                     blocked[row * cols + col] = True
 
         for obstacle in world_view.obstacles:
-            if isinstance(obstacle, CircleObstacle):
+            if isinstance(obstacle, (CircleObstacle, DynamicCircleObstacle)):
+                # Dynamic obstacles are rasterized at their CURRENT position —
+                # planners only ever see the present, never the future.
                 radius = obstacle.radius + inflation
                 min_col = max(0, int((obstacle.cx - radius) / GRID_RESOLUTION))
                 max_col = min(cols - 1, int((obstacle.cx + radius) / GRID_RESOLUTION))
@@ -60,6 +68,8 @@ class AStarPlanner:
                         if (cx - obstacle.cx) ** 2 + (cy - obstacle.cy) ** 2 < radius**2:
                             blocked[row * cols + col] = True
             else:
+                # Static rects and dynamic rects both expose x/y as the current
+                # min corner plus max_x/max_y properties.
                 min_x = obstacle.x - inflation
                 min_y = obstacle.y - inflation
                 max_x = obstacle.max_x + inflation
@@ -82,6 +92,8 @@ class AStarPlanner:
     ) -> PlanResult:
         started = time.perf_counter()
         blocked, cols, rows = self.build_grid(world_view)
+        self.last_grid = (blocked, cols, rows)
+        self.last_expanded = []
 
         start_cell = self._to_cell(robot.position, cols, rows)
         goal_cell = self._to_cell(goal, cols, rows)
@@ -90,7 +102,9 @@ class AStarPlanner:
         if blocked[start_cell[1] * cols + start_cell[0]]:
             return self._failure(started, "start lies inside an inflated obstacle")
 
-        path = self._search(blocked, cols, rows, start_cell, goal_cell)
+        expanded: list[tuple[int, int]] = []
+        path = self._search(blocked, cols, rows, start_cell, goal_cell, expanded)
+        self.last_expanded = expanded
         if path is None:
             return self._failure(started, "no collision-free path found")
 
@@ -121,8 +135,13 @@ class AStarPlanner:
         rows: int,
         start: tuple[int, int],
         goal: tuple[int, int],
+        expanded: list[tuple[int, int]] | None = None,
     ) -> list[tuple[int, int]] | None:
-        """8-connected A*; diagonal moves require both orthogonal neighbors free."""
+        """8-connected A*; diagonal moves require both orthogonal neighbors free.
+
+        If ``expanded`` is given, cells are appended to it in pop order so the
+        caller can visualize which nodes the last search touched.
+        """
 
         def heuristic(cell: tuple[int, int]) -> float:
             dx = abs(cell[0] - goal[0])
@@ -150,6 +169,8 @@ class AStarPlanner:
             if current in closed:
                 continue
             closed.add(current)
+            if expanded is not None:
+                expanded.append(current)
             if current == goal:
                 path = [current]
                 while current in came_from:
