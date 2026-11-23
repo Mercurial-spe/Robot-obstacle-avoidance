@@ -25,6 +25,7 @@ The frontend is judged on three things: it renders **real backend state**, the t
 - Fetching from components; duplicating backend-derived state in a store.
 - `any`, non-strict tsconfig options, unused Vite template boilerplate kept in the repo.
 - Layout-only hacks that break the shared viewport/scale between the paired maps.
+- **Non-`<Layer>` direct children of a Konva `<Stage>`** — Konva throws "You may only add layers to the stage" at RUNTIME, crashing the whole React tree to a blank page while `tsc` + `vite build` stay green. Always wrap canvas content in `<Layer>`; any change to `src/canvas/` must be eyeballed in the browser, not just built.
 
 ---
 

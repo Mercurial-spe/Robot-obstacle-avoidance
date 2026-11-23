@@ -1,5 +1,5 @@
 import type { KonvaEventObject } from "konva/lib/Node";
-import { Arrow, Circle, Group, Line, Rect, Shape, Stage, Text } from "react-konva";
+import { Arrow, Circle, Group, Layer, Line, Rect, Shape, Stage, Text } from "react-konva";
 import type { GridInfo, ObstacleState, PlanInfoOut, Snapshot } from "../types";
 import type { LayerToggles } from "../hooks/useLayerToggles";
 import { LAYER_STYLE, PX_PER_M } from "./layerStyles";
@@ -134,6 +134,8 @@ export function MapCanvas({
 
   return (
     <Stage width={width} height={height}>
+      {/* Konva requires Layer as the direct child of a Stage */}
+      <Layer>
       {/* arena; clickable when editing (add obstacle / deselect) */}
       <Rect
         x={0}
@@ -325,6 +327,7 @@ export function MapCanvas({
           color={LAYER_STYLE.apfForce.color}
         />
       )}
+      </Layer>
     </Stage>
   );
 }
