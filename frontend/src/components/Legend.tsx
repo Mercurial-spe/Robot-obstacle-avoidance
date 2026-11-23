@@ -28,7 +28,7 @@ export function Legend({ layers, onToggle }: LegendProps) {
             } ${onToggle ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
           >
             <Swatch kind={style.kind} color={style.color} />
-            <span className={on ? "text-slate-300" : "text-slate-500"}>
+            <span className={on ? "text-zinc-300" : "text-zinc-500"}>
               {style.label}
             </span>
           </button>
@@ -56,8 +56,8 @@ function Swatch({
   if (kind === "fill") {
     return (
       <span
-        className="inline-block h-3 w-4 rounded-sm border border-slate-500"
-        style={{ backgroundColor: "rgba(148, 163, 184, 0.25)" }}
+        className="inline-block h-3 w-4 rounded-sm border border-zinc-500"
+        style={{ backgroundColor: "rgba(255, 255, 255, 0.22)" }}
       />
     );
   }

@@ -1,6 +1,8 @@
 import { Legend } from "./Legend";
 import { MapCanvas } from "../canvas/MapCanvas";
+import { algoColor } from "../canvas/layerStyles";
 import { SessionMetricsFooter } from "./SessionMetricsFooter";
+import { TelemetryStrip } from "./TelemetryStrip";
 import type { LayerId, LayerToggles } from "../hooks/useLayerToggles";
 import type { SessionState } from "../hooks/useSession";
 import type { AlgorithmInfo } from "../types";
@@ -44,15 +46,15 @@ export function DualSessionView({
   return (
     <div className="flex min-h-full flex-col gap-3 p-4">
       {/* shared readout + legend */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-800 bg-slate-900/60 px-4 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-zinc-800 bg-zinc-900/60 px-4 py-2">
         <div className="flex items-center gap-3 text-sm">
-          <span className="font-medium text-slate-300">
+          <span className="font-medium text-zinc-300">
             仿真时间
-            <span className="ml-2 font-mono text-slate-100">
+            <span className="ml-2 font-mono text-zinc-100">
               {simTime === null ? "—" : `${simTime.toFixed(2)} s`}
             </span>
           </span>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-zinc-500">
             同一场景 · 同一种子 · 双方同步运行
           </span>
         </div>
@@ -74,11 +76,13 @@ export function DualSessionView({
       <div className="grid flex-1 grid-cols-2 gap-4">
         <MapSide
           title={`A · ${nameOf(algorithmA)}`}
+          accent={algoColor(algorithmA)}
           session={sessionA}
           layers={layers}
         />
         <MapSide
           title={`B · ${nameOf(algorithmB)}`}
+          accent={algoColor(algorithmB)}
           session={sessionB}
           layers={layers}
         />
@@ -89,19 +93,29 @@ export function DualSessionView({
 
 function MapSide({
   title,
+  accent,
   session,
   layers,
 }: {
   title: string;
+  /** Algorithm identity color (color follows the algorithm, not its rank). */
+  accent: string;
   session: SessionState;
   layers: LayerToggles;
 }) {
   return (
     <section className="flex min-w-0 flex-col">
-      <h2 className="mb-1.5 text-sm font-semibold text-slate-300">{title}</h2>
-      <div className="flex min-h-[360px] flex-1 items-center justify-center rounded-md border border-slate-800 p-2">
+      <h2 className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-zinc-300">
+        <span
+          className="inline-block h-2.5 w-2.5 rounded-sm"
+          style={{ backgroundColor: accent }}
+        />
+        {title}
+      </h2>
+      <div className="flex min-h-[360px] flex-1 items-center justify-center rounded-md border border-zinc-800 p-2">
         <MapCanvas snapshot={session.snapshot} planInfo={session.planInfo} layers={layers} />
       </div>
+      <TelemetryStrip snapshot={session.snapshot} />
       <SessionMetricsFooter
         snapshot={session.snapshot}
         connected={session.connected}

@@ -12,14 +12,14 @@ export function SessionMetricsFooter({
 }) {
   if (!snapshot) {
     return (
-      <div className="mt-2 flex h-16 items-center justify-center rounded-md border border-dashed border-slate-800 bg-slate-900/40 text-xs text-slate-500">
+      <div className="mt-2 flex h-16 items-center justify-center rounded-md border border-dashed border-zinc-800 bg-zinc-900/40 text-xs text-zinc-500">
         尚未创建会话
       </div>
     );
   }
   const chip = sessionChip(snapshot.status, snapshot.run_status);
   return (
-    <div className="mt-2 rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2">
+    <div className="mt-2 rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2">
       <div className="mb-1.5 flex items-center gap-2">
         <span
           className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${chip.className}`}
@@ -27,7 +27,7 @@ export function SessionMetricsFooter({
           {chip.label}
         </span>
         {!connected && (
-          <span className="text-[10px] text-slate-500">WS 未连接</span>
+          <span className="text-[10px] text-zinc-500">WS 未连接</span>
         )}
       </div>
       <dl className="grid grid-cols-5 gap-x-2 text-xs">
@@ -50,8 +50,8 @@ export function SessionMetricsFooter({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="truncate text-[10px] text-slate-400">{label}</dt>
-      <dd className="truncate font-mono text-slate-200">{value}</dd>
+      <dt className="truncate text-[10px] text-zinc-400">{label}</dt>
+      <dd className="truncate font-mono text-zinc-200">{value}</dd>
     </div>
   );
 }

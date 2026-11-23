@@ -2,6 +2,7 @@ import { Legend } from "./Legend";
 import { EventsPanel } from "./EventsPanel";
 import { SceneEditorPanel } from "./SceneEditorPanel";
 import { StatusPanel } from "./StatusPanel";
+import { TelemetryStrip } from "./TelemetryStrip";
 import { MapCanvas } from "../canvas/MapCanvas";
 import { useEventLog } from "../hooks/useEventLog";
 import type { LayerId, LayerToggles } from "../hooks/useLayerToggles";
@@ -49,14 +50,14 @@ export function SingleSessionView({
         {hasSession && (
           <div className="mb-2 flex w-full items-center justify-between">
             <Legend layers={layers} onToggle={toggleLayer} />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-zinc-500">
               {editor.canEdit
                 ? "可编辑场景：拖拽障碍物 / 起点 / 终点"
                 : "运行中 — 地图只读"}
             </span>
           </div>
         )}
-        <div className="flex min-h-[420px] w-full flex-1 items-center justify-center rounded-md border border-slate-800 p-2">
+        <div className="flex min-h-[420px] w-full flex-1 items-center justify-center rounded-md border border-zinc-800 p-2">
           <MapCanvas
             snapshot={session.snapshot}
             planInfo={session.planInfo}
@@ -64,13 +65,16 @@ export function SingleSessionView({
             interaction={interaction}
           />
         </div>
+        <div className="w-full">
+          <TelemetryStrip snapshot={session.snapshot} />
+        </div>
         {session.error && (
           <p className="mt-2 w-full rounded-md border border-red-800 bg-red-950/60 px-3 py-1.5 text-xs text-red-300">
             {session.error}
           </p>
         )}
       </section>
-      <aside className="w-[22rem] shrink-0 space-y-3 overflow-y-auto border-l border-slate-800 p-4">
+      <aside className="w-[22rem] shrink-0 space-y-3 overflow-y-auto border-l border-zinc-800 p-4">
         <StatusPanel
           snapshot={session.snapshot}
           connected={session.connected}
@@ -80,7 +84,7 @@ export function SingleSessionView({
         {session.snapshot ? (
           <SceneEditorPanel session={session} editor={editor} />
         ) : (
-          <p className="rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-500">
+          <p className="rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
             创建会话后可在此编辑场景（拖拽、增删障碍物、改起终点）。
           </p>
         )}

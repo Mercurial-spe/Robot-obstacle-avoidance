@@ -1,6 +1,17 @@
 import type { KonvaEventObject } from "konva/lib/Node";
 import { Map as MapIcon } from "lucide-react";
-import { Arrow, Circle, Group, Layer, Line, Rect, Shape, Stage, Text } from "react-konva";
+import {
+  Arrow,
+  Circle,
+  Group,
+  Layer,
+  Line,
+  Rect,
+  RegularPolygon,
+  Shape,
+  Stage,
+  Text,
+} from "react-konva";
 import type { GridInfo, ObstacleState, PlanInfoOut, Snapshot } from "../types";
 import type { LayerToggles } from "../hooks/useLayerToggles";
 import { LAYER_STYLE, PX_PER_M } from "./layerStyles";
@@ -96,9 +107,9 @@ export function MapCanvas({
 }) {
   if (!snapshot) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-500">
+      <div className="flex h-full flex-col items-center justify-center gap-2 text-zinc-500">
         <MapIcon size={28} strokeWidth={1.5} aria-hidden />
-        <p className="text-sm font-medium text-slate-400">尚未创建会话</p>
+        <p className="text-sm font-medium text-zinc-400">尚未创建会话</p>
         <p className="max-w-56 text-center text-xs leading-relaxed">
           在顶部选择场景与算法后点击「新建会话」开始仿真
         </p>
@@ -141,14 +152,15 @@ export function MapCanvas({
     <Stage width={width} height={height}>
       {/* Konva requires Layer as the direct child of a Stage */}
       <Layer>
-      {/* arena; clickable when editing (add obstacle / deselect) */}
+      {/* arena: PathPlanner-style mid-gray field with a crisp white border,
+          clickable when editing (add obstacle / deselect) */}
       <Rect
         x={0}
         y={0}
         width={width}
         height={height}
-        fill="#0d1624"
-        stroke="#31415c"
+        fill="#32353c"
+        stroke="#e4e4e7"
         strokeWidth={2}
         onClick={editable ? handleArenaClick : undefined}
       />
@@ -226,6 +238,10 @@ export function MapCanvas({
           shadowOpacity={0.35}
         />
       )}
+      {/* planned-path waypoint dots (PathPlanner-style vertex markers) */}
+      {layers.plannedPath && snapshot.path.length > 2 && (
+        <WaypointDots path={snapshot.path} toPx={toPx} />
+      )}
       {/* executed trajectory */}
       {layers.trajectory && snapshot.trajectory.length > 1 && (
         <Line
@@ -262,7 +278,7 @@ export function MapCanvas({
         x={startPos[0] - 16}
         y={startPos[1] + 10}
         text="START"
-        fill="#8fa3bf"
+        fill="#d4d4d8"
         fontSize={10}
         listening={false}
       />
@@ -328,20 +344,44 @@ export function MapCanvas({
           })}
         </Group>
       )}
-      {/* robot body */}
-      <Circle
-        x={robotPos[0]}
-        y={robotPos[1]}
-        radius={snapshot.robot_radius * S}
-        fill="#e2e8f0"
-        stroke="#f8fafc"
-        strokeWidth={1.5}
-        shadowColor="#000000"
-        shadowBlur={8}
-        shadowOpacity={0.4}
-        shadowOffsetY={2}
-        listening={false}
-      />
+      {/* robot body: white disc + hexagonal chassis ring rotated by the REAL
+          heading (theta from the snapshot — real state, not decoration) */}
+      <Group listening={false}>
+        <Circle
+          x={robotPos[0]}
+          y={robotPos[1]}
+          radius={snapshot.robot_radius * S}
+          fill="#fafafa"
+          stroke="#18181b"
+          strokeWidth={1.5}
+          shadowColor="#000000"
+          shadowBlur={8}
+          shadowOpacity={0.45}
+          shadowOffsetY={2}
+        />
+        <RegularPolygon
+          x={robotPos[0]}
+          y={robotPos[1]}
+          sides={6}
+          radius={snapshot.robot_radius * S * 1.5}
+          rotation={(-snapshot.robot.theta * 180) / Math.PI}
+          stroke="#38bdf8"
+          strokeWidth={1.5}
+          cornerRadius={2}
+        />
+        {/* heading tick on the hexagon so rotation is readable at a glance */}
+        <Line
+          points={[
+            robotPos[0],
+            robotPos[1],
+            robotPos[0] + Math.cos(snapshot.robot.theta) * snapshot.robot_radius * S * 1.5,
+            robotPos[1] - Math.sin(snapshot.robot.theta) * snapshot.robot_radius * S * 1.5,
+          ]}
+          stroke="#38bdf8"
+          strokeWidth={2}
+          lineCap="round"
+        />
+      </Group>
       {/* robot heading */}
       {layers.robotHeading && (
         <Line
@@ -388,7 +428,7 @@ function GridLayerBackdrop({
 }) {
   return (
     <Group listening={false}>
-      {[0.05, 0.1].map((alpha, pass) => (
+      {[0.08, 0.16].map((alpha, pass) => (
         <Shape
           key={pass}
           listening={false}
@@ -406,12 +446,39 @@ function GridLayerBackdrop({
             ctx.closePath();
             ctx.fillStrokeShape(shape);
           }}
-          stroke={`rgba(148, 163, 184, ${alpha})`}
+          stroke={`rgba(0, 0, 0, ${alpha})`}
           strokeWidth={1}
         />
       ))}
     </Group>
   );
+}
+
+/** PathPlanner-style vertex markers on the planned path, thinned to ≤40 dots. */
+function WaypointDots({
+  path,
+  toPx,
+}: {
+  path: [number, number][];
+  toPx: (x: number, y: number) => [number, number];
+}) {
+  const k = Math.max(1, Math.ceil(path.length / 40));
+  const dots: React.ReactNode[] = [];
+  for (let i = 1; i < path.length - 1; i += k) {
+    const [px, py] = toPx(path[i][0], path[i][1]);
+    dots.push(
+      <Circle
+        key={i}
+        x={px}
+        y={py}
+        radius={2.5}
+        stroke={LAYER_STYLE.plannedPath.color}
+        strokeWidth={1}
+        opacity={0.7}
+      />,
+    );
+  }
+  return <Group listening={false}>{dots}</Group>;
 }
 
 function ObstacleBody({
@@ -434,16 +501,16 @@ function ObstacleBody({
   const stroke = selected
     ? "#38bdf8"
     : geom.dynamic
-      ? "#9db1d0"
-      : "#64789c";
+      ? "#f472b6" // dynamic family — matches the velocity-arrow accent
+      : "#a1a1aa";
   const common = {
-    fill: "#43506b",
+    fill: "#15161a",
     stroke,
-    strokeWidth: selected ? 2.5 : 1,
+    strokeWidth: selected ? 2.5 : 1.5,
     dash: geom.dynamic ? [4, 3] : undefined,
     shadowColor: "#000000",
     shadowBlur: 6,
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowOffsetY: 2,
     draggable: editable,
     onClick: onSelect,
@@ -482,8 +549,8 @@ function InflatedShape({
   S: number;
   height: number;
 }) {
-  const fill = "rgba(148, 163, 184, 0.14)";
-  const stroke = "rgba(148, 163, 184, 0.45)";
+  const fill = "rgba(255, 255, 255, 0.09)";
+  const stroke = "rgba(255, 255, 255, 0.32)";
   if (geom.shape === "circle") {
     return (
       <Circle
@@ -532,7 +599,7 @@ function GridLayer({ grid, height }: { grid: GridInfo; height: number }) {
         ctx.closePath();
         ctx.fillStrokeShape(shape);
       }}
-      fill="rgba(148, 163, 184, 0.16)"
+      fill="rgba(0, 0, 0, 0.28)"
     />
   );
 }

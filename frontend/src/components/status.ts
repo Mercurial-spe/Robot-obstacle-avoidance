@@ -25,11 +25,11 @@ const OUTCOME_CHIPS: Record<string, string> = {
   collided: "bg-red-700 text-white",
   timeout: "bg-amber-600 text-white",
   stuck: "bg-orange-600 text-white",
-  planning_failed: "bg-slate-700 text-slate-200",
+  planning_failed: "bg-zinc-700 text-zinc-200",
 };
 
 const SESSION_CHIPS: Record<SessionStatus, { label: string; className: string }> = {
-  idle: { label: "待机", className: "bg-slate-700 text-slate-200" },
+  idle: { label: "待机", className: "bg-zinc-700 text-zinc-200" },
   running: { label: "运行中", className: "bg-sky-600 text-white" },
   paused: { label: "已暂停", className: "bg-amber-600 text-white" },
   finished: { label: "已结束", className: "bg-emerald-700 text-white" },

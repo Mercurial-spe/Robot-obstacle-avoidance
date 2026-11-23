@@ -26,7 +26,7 @@ const OUTCOME_SERIES = [
   { key: "collided", label: "碰撞", color: "#ef4444" },
   { key: "timeout", label: "超时", color: "#eab308" },
   { key: "stuck", label: "被困", color: "#f97316" },
-  { key: "planning_failed", label: "规划失败", color: "#94a3b8" },
+  { key: "planning_failed", label: "规划失败", color: "#a1a1aa" },
 ] as const;
 
 const ALGO_LABEL_FALLBACK: Record<string, string> = {
@@ -121,21 +121,21 @@ export function ExperimentPanel({
     algorithms.find((a) => a.id === id)?.name ?? algoDisplayName(id);
 
   return (
-    <section className="border-t border-slate-800 bg-slate-950">
+    <section className="border-t border-zinc-800 bg-zinc-950">
       <details open className="group">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 text-sm font-semibold text-slate-300 hover:text-slate-100">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 text-sm font-semibold text-zinc-300 hover:text-zinc-100">
           批量实验对比
-          <span className="text-xs font-normal text-slate-500 group-open:hidden">
+          <span className="text-xs font-normal text-zinc-500 group-open:hidden">
             点击展开
           </span>
         </summary>
         <div className="space-y-3 px-4 pb-4">
           {/* controls */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-            <label className="flex items-center gap-1.5 text-slate-400">
+            <label className="flex items-center gap-1.5 text-zinc-400">
               场景
               <select
-                className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-200"
+                className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-200"
                 value={effectiveScenario}
                 onChange={(e) => setScenarioId(e.target.value)}
               >
@@ -147,11 +147,11 @@ export function ExperimentPanel({
               </select>
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-slate-400">算法</span>
+              <span className="text-zinc-400">算法</span>
               {algorithms.map((algo) => (
                 <label
                   key={algo.id}
-                  className="flex cursor-pointer items-center gap-1 text-slate-300"
+                  className="flex cursor-pointer items-center gap-1 text-zinc-300"
                 >
                   <input
                     type="checkbox"
@@ -163,7 +163,7 @@ export function ExperimentPanel({
                 </label>
               ))}
             </div>
-            <label className="flex items-center gap-1.5 text-slate-400">
+            <label className="flex items-center gap-1.5 text-zinc-400">
               种子数
               <input
                 type="number"
@@ -171,7 +171,7 @@ export function ExperimentPanel({
                 max={20}
                 value={seedCount}
                 onChange={(e) => setSeedCount(e.target.value)}
-                className="w-16 rounded border border-slate-700 bg-slate-900 px-1.5 py-1 font-mono text-sm text-slate-200 focus:border-sky-500 focus:outline-none"
+                className="w-16 rounded border border-zinc-700 bg-zinc-900 px-1.5 py-1 font-mono text-sm text-zinc-200 focus:border-sky-500 focus:outline-none"
               />
             </label>
             <button
@@ -183,7 +183,7 @@ export function ExperimentPanel({
               {busy ? "运行中…" : "运行批量实验"}
             </button>
             {result && !busy && (
-              <span className="text-slate-500">
+              <span className="text-zinc-500">
                 {result.runs.length} 次运行 · 种子 {result.seeds[0]}–
                 {result.seeds[result.seeds.length - 1]}
               </span>
@@ -204,7 +204,7 @@ export function ExperimentPanel({
                 {result.algorithms.map((id) => (
                   <span
                     key={id}
-                    className="flex items-center gap-1.5 text-xs text-slate-300"
+                    className="flex items-center gap-1.5 text-xs text-zinc-300"
                   >
                     <span
                       className="inline-block h-2.5 w-5 rounded-sm"
@@ -249,11 +249,11 @@ export function ExperimentPanel({
                 />
               </div>
 
-              <p className="text-[11px] text-slate-500">
-                导出目录：<span className="font-mono text-slate-400">{result.output_dir}</span>
+              <p className="text-[11px] text-zinc-500">
+                导出目录：<span className="font-mono text-zinc-400">{result.output_dir}</span>
                 {" · "}文件：
                 {Object.entries(result.files).map(([key, file]) => (
-                  <span key={key} className="ml-2 font-mono text-slate-400">
+                  <span key={key} className="ml-2 font-mono text-zinc-400">
                     {file}
                   </span>
                 ))}
@@ -261,7 +261,7 @@ export function ExperimentPanel({
             </>
           )}
           {!result && !busy && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-zinc-500">
               选择场景与算法后运行；同一场景、同一批种子下各算法共享相同的机器人限制、碰撞规则与目标条件。
             </p>
           )}
@@ -291,27 +291,27 @@ function MetricChart({
   valueFormatter: (value: number) => string;
 }) {
   return (
-    <div className="rounded-md border border-slate-800 bg-slate-900/60 p-3">
-      <h4 className="mb-1 truncate text-xs font-medium text-slate-300">{title}</h4>
+    <div className="rounded-md border border-zinc-800 bg-zinc-900/60 p-3">
+      <h4 className="mb-1 truncate text-xs font-medium text-zinc-300">{title}</h4>
       <ResponsiveContainer width="100%" height={185}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
-          <CartesianGrid stroke="#1e293b" vertical={false} />
+          <CartesianGrid stroke="#27272a" vertical={false} />
           <XAxis
             dataKey="name"
-            tick={{ fill: "#94a3b8", fontSize: 11 }}
-            stroke="#334155"
+            tick={{ fill: "#a1a1aa", fontSize: 11 }}
+            stroke="#3f3f46"
           />
           <YAxis
-            tick={{ fill: "#64748b", fontSize: 10 }}
-            stroke="#334155"
+            tick={{ fill: "#71717a", fontSize: 10 }}
+            stroke="#3f3f46"
             domain={yMax !== undefined ? [0, yMax] : undefined}
             allowDecimals={false}
           />
           <Tooltip
             cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
             contentStyle={{
-              backgroundColor: "#0f172a",
-              border: "1px solid #334155",
+              backgroundColor: "#18181b",
+              border: "1px solid #3f3f46",
               borderRadius: 6,
               fontSize: 12,
               color: "#e2e8f0",
@@ -322,7 +322,7 @@ function MetricChart({
             <>
               <Legend
                 iconSize={10}
-                wrapperStyle={{ fontSize: 11, color: "#94a3b8" }}
+                wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }}
               />
               {series.map((s) => (
                 <Bar

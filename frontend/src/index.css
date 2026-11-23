@@ -22,18 +22,18 @@
 /* Thin, quiet scrollbars for the dense panels (event log, side panels). */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: #3f3f46 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #3f3f46;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #52525b;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
@@ -50,6 +50,6 @@
 /* Native dropdown list styling on Windows Chromium, where color-scheme
  * alone leaves options on a white strip. */
 option {
-  background-color: #0f172a;
+  background-color: #18181b;
   color: #e2e8f0;
 }

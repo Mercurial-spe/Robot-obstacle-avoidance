@@ -44,9 +44,9 @@ export function SceneEditorPanel({
   };
 
   return (
-    <div className="rounded-md border border-slate-800 bg-slate-900/60 p-3">
+    <div className="rounded-md border border-zinc-800 bg-zinc-900/60 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-slate-400">场景编辑</h3>
+        <h3 className="text-xs font-semibold text-zinc-400">场景编辑</h3>
         {editor.dirty && (
           <span className="rounded bg-amber-600/20 px-1.5 py-0.5 text-[10px] text-amber-400">
             有未应用的修改
@@ -63,7 +63,7 @@ export function SceneEditorPanel({
       {/* add obstacle */}
       <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs">
         <select
-          className="rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-slate-200"
+          className="rounded border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-zinc-200"
           value={editor.addConfig.shape}
           onChange={(e) =>
             editor.setAddConfig({
@@ -102,7 +102,7 @@ export function SceneEditorPanel({
           className={`rounded px-2 py-1 font-medium disabled:opacity-40 ${
             editor.addMode
               ? "bg-sky-500 text-white"
-              : "border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
+              : "border border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
           }`}
         >
           {editor.addMode ? "点击地图放置…" : "添加障碍物"}
@@ -111,7 +111,7 @@ export function SceneEditorPanel({
 
       {/* selection */}
       <div className="mb-2 flex items-center justify-between text-xs">
-        <span className="text-slate-500">
+        <span className="text-zinc-500">
           {editor.selected !== null && editor.draft
             ? `已选中障碍物 #${editor.selected + 1}`
             : "点击障碍物可选中"}
@@ -135,7 +135,7 @@ export function SceneEditorPanel({
         {applying ? "正在应用…" : "应用场景修改"}
       </button>
 
-      <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-[10px] leading-relaxed text-zinc-500">
         {editor.canEdit
           ? "拖拽障碍物、起点、终点，或添加/删除障碍物后应用；重置会还原预设场景。拖拽动态障碍物会平移其运动路径。"
           : "会话运行中，暂停后才能编辑场景。"}
@@ -154,7 +154,7 @@ function SizeInput({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="flex items-center gap-1 text-slate-400">
+    <label className="flex items-center gap-1 text-zinc-400">
       {label}
       <input
         type="number"
@@ -166,9 +166,9 @@ function SizeInput({
           const parsed = parseFloat(e.target.value);
           if (Number.isFinite(parsed) && parsed > 0) onChange(parsed);
         }}
-        className="w-14 rounded border border-slate-700 bg-slate-900 px-1.5 py-1 font-mono text-slate-200 focus:border-sky-500 focus:outline-none"
+        className="w-14 rounded border border-zinc-700 bg-zinc-900 px-1.5 py-1 font-mono text-zinc-200 focus:border-sky-500 focus:outline-none"
       />
-      <span className="text-[10px] text-slate-500">m</span>
+      <span className="text-[10px] text-zinc-500">m</span>
     </label>
   );
 }

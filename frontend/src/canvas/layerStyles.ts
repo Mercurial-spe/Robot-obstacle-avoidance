@@ -37,7 +37,7 @@ export const PX_PER_M = 48;
  * Experiment-chart colors, assigned BY ALGORITHM ID (color follows the entity,
  * never its rank — a different algorithm mix must not repaint survivors).
  * Validated with the dataviz six-checks script against the chart surface
- * #0f172a (bg-slate-900): lightness band, chroma, CVD separation, contrast.
+ * #18181b (bg-zinc-900): lightness band, chroma, CVD separation, contrast.
  * Chart series stay darker than the map's line accents on purpose: bars are
  * large fills, lines are thin strokes.
  */
@@ -48,7 +48,7 @@ export const ALGO_COLORS: Record<string, string> = {
 };
 
 /** Color for an algorithm id missing from ALGO_COLORS (future algorithms). */
-export const ALGO_COLOR_FALLBACK = "#64748b";
+export const ALGO_COLOR_FALLBACK = "#71717a";
 
 export function algoColor(algorithm: string): string {
   return ALGO_COLORS[algorithm] ?? ALGO_COLOR_FALLBACK;

@@ -140,14 +140,21 @@ export default function App() {
     view === "dual" ? handleDualCommand : handleSingleCommand;
   const controlStatus = view === "dual" ? dualStatus : sessionSingle.snapshot?.status ?? null;
   const controlBusy = view === "dual" ? dualBusy : sessionSingle.busy;
+  const connected = view === "dual" ? sessionA.connected : sessionSingle.connected;
 
   return (
-    <div className="flex h-screen flex-col bg-slate-950 text-slate-100">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-6 py-3">
+    <div className="flex h-screen flex-col bg-zinc-950 text-zinc-100">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-6 py-3">
         <div className="flex items-center gap-4">
           <h1 className="text-base font-semibold tracking-wide">
+            <span
+              title={connected ? "WebSocket 已连接" : "未连接"}
+              className={`mr-2.5 inline-block h-2 w-2 translate-y-[-1px] rounded-full ${
+                connected ? "bg-emerald-500" : "bg-zinc-600"
+              }`}
+            />
             Robot Navigation Workbench
-            <span className="ml-3 text-xs font-normal text-slate-500">
+            <span className="ml-3 text-xs font-normal text-zinc-500">
               实验一 · 机器人避障
             </span>
           </h1>
@@ -232,14 +239,14 @@ function ViewSwitcher({
   onChange: (view: ViewId) => void;
 }) {
   return (
-    <div className="flex items-center gap-0.5 rounded-md border border-slate-800 bg-slate-900 p-0.5">
+    <div className="flex items-center gap-0.5 rounded-md border border-zinc-800 bg-zinc-900 p-0.5">
       {VIEWS.map((entry) => (
         <button
           key={entry.id}
           type="button"
           onClick={() => onChange(entry.id)}
           className={`relative rounded px-3 py-1 text-xs font-medium transition-colors ${
-            view === entry.id ? "text-white" : "text-slate-400 hover:text-slate-200"
+            view === entry.id ? "text-white" : "text-zinc-400 hover:text-zinc-200"
           }`}
         >
           {view === entry.id && (
