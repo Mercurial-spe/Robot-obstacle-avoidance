@@ -6,6 +6,12 @@ import tailwindcss from "@tailwindcss/vite";
 // /api (REST + WebSocket) to the local FastAPI server.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    // The bundle is dominated by Recharts + Konva + react-konva. This is a
+    // LAN classroom tool, not a public website, so one ~1.2 MB chunk is
+    // acceptable; only raise the warning threshold to keep builds readable.
+    chunkSizeWarningLimit: 1500,
+  },
   server: {
     proxy: {
       "/api": {

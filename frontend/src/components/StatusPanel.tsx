@@ -1,4 +1,4 @@
-import type { Snapshot } from "../types";
+import type { PlanInfoOut, Snapshot } from "../types";
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   idle: { label: "待机", className: "bg-slate-700 text-slate-200" },
@@ -19,14 +19,17 @@ const RUN_STATUS_LABELS: Record<string, string> = {
 export function StatusPanel({
   snapshot,
   connected,
+  planInfo,
 }: {
   snapshot: Snapshot | null;
   connected: boolean;
+  planInfo: PlanInfoOut | null;
 }) {
   if (!snapshot) {
     return <p className="text-sm text-slate-500">尚无会话。</p>;
   }
   const statusInfo = STATUS_LABELS[snapshot.status] ?? STATUS_LABELS.idle;
+  const apfForce = snapshot.apf_force;
   return (
     <div className="space-y-4 text-sm text-slate-300">
       <div className="flex items-center gap-2">
@@ -50,7 +53,34 @@ export function StatusPanel({
         <Metric label="碰撞次数" value={String(snapshot.metrics.collision_count)} />
         <Metric label="运行结果" value={RUN_STATUS_LABELS[snapshot.run_status] ?? snapshot.run_status} />
       </dl>
-      <p className="text-xs text-slate-500">seed 会话 · 算法与参数在右侧调参（P1 扩展）</p>
+      {apfForce && (
+        <p className="text-xs text-slate-500">
+          APF 力：<span className="font-mono text-slate-300">
+            ({apfForce[0].toFixed(2)}, {apfForce[1].toFixed(2)})
+          </span>{" "}
+          |F| ={" "}
+          <span className="font-mono text-slate-300">
+            {Math.hypot(apfForce[0], apfForce[1]).toFixed(2)}
+          </span>
+        </p>
+      )}
+      {planInfo && (
+        <div className="rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2.5">
+          <p className="mb-1.5 text-xs font-medium text-slate-400">规划元数据</p>
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+            <Metric label="算法" value={planInfo.algorithm} />
+            <Metric label="膨胀半径" value={`${planInfo.inflation_m.toFixed(2)} m`} />
+            <Metric label="搜索节点" value={String(planInfo.expanded_nodes.length)} />
+            <Metric
+              label="栅格"
+              value={planInfo.grid ? `${planInfo.grid.cols}×${planInfo.grid.rows}` : "—"}
+            />
+          </dl>
+        </div>
+      )}
+      <p className="text-xs text-slate-500">
+        种子会话 · 安全边距与速度上限在顶部设置后新建会话生效
+      </p>
     </div>
   );
 }
