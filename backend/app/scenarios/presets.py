@@ -14,17 +14,29 @@ from app.scenarios.models import (
 STATIC_BASIC = Scenario(
     id="static-basic",
     name="静态基础",
-    description="静态障碍物基础场景：绕开中央障碍带到达终点。",
+    description=(
+        "静态障碍物基础场景：起点到终点的直连走廊上布有多枚圆形障碍，"
+        "中央墙体封锁直线通路、仅留一道缺口，机器人必须连续绕行并穿过缺口才能到达终点。"
+    ),
     width=20.0,
     height=12.0,
     start=(2.0, 6.0),
     goal=(18.0, 6.0),
     obstacles=[
-        # A broken wall with a gap the planner must find.
-        RectObstacleSpec(x=9.0, y=0.5, width=1.0, height=7.5),
+        # A broken wall with a wide gap (y 7.5-9.5) the planner must find.
+        RectObstacleSpec(x=9.0, y=0.5, width=1.0, height=7.0),
         RectObstacleSpec(x=9.0, y=9.5, width=1.0, height=2.0),
+        # Gauntlet directly ON the naive straight line y=6: a no-avoidance
+        # run would hit every one of these.
+        CircleObstacleSpec(cx=4.8, cy=5.4, radius=0.55),
+        CircleObstacleSpec(cx=12.0, cy=6.5, radius=0.7),
+        CircleObstacleSpec(cx=15.5, cy=5.2, radius=0.55),
+        # Flanking the detour lane so the route to the gap needs a weave too.
+        CircleObstacleSpec(cx=5.0, cy=9.6, radius=0.7),
+        CircleObstacleSpec(cx=12.0, cy=10.2, radius=0.6),
+        # The lower lane is not a free detour either.
+        CircleObstacleSpec(cx=6.5, cy=2.8, radius=0.65),
         CircleObstacleSpec(cx=14.0, cy=3.0, radius=0.8),
-        CircleObstacleSpec(cx=5.5, cy=9.0, radius=0.7),
     ],
     seed=42,
 )
