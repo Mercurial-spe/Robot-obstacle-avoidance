@@ -99,9 +99,122 @@ MIXED_CORRIDOR = Scenario(
     seed=7,
 )
 
+STATIC_SLALOM = Scenario(
+    id="static-slalom",
+    name="S形绕桩",
+    description=(
+        "上下交错的三道墙体门迫使路线呈 S 形，每个转弯的对角线上都有一枚圆形桩："
+        "机器人必须连续大幅变向，绕开正对必经之路的桩位才能到达终点。"
+    ),
+    width=22.0,
+    height=10.0,
+    start=(2.0, 5.0),
+    goal=(20.0, 5.0),
+    obstacles=[
+        # Three staggered gates: top-hung / floor-hung / top-hung. The only
+        # route zigzags bottom -> top -> bottom. Gate 2 hangs from y=4.5 (not
+        # 3.5): a tighter gap sent APF into a slow wall-hugging corner crawl
+        # that tripped the 6 s stuck detector even though it was still alive.
+        RectObstacleSpec(x=6.0, y=0.0, width=0.8, height=6.5),
+        RectObstacleSpec(x=10.0, y=4.5, width=0.8, height=5.5),
+        RectObstacleSpec(x=14.0, y=0.0, width=0.8, height=6.5),
+        # Slalom poles ON each straight leg of the zigzag: start->gate1,
+        # gate1->gate2, gate2->gate3, gate3->goal diagonals all hit one.
+        CircleObstacleSpec(cx=4.0, cy=6.5, radius=0.55),
+        CircleObstacleSpec(cx=8.0, cy=5.0, radius=0.6),
+        CircleObstacleSpec(cx=12.0, cy=5.0, radius=0.6),
+        CircleObstacleSpec(cx=17.0, cy=6.0, radius=0.6),
+    ],
+    seed=11,
+)
+
+DYNAMIC_DOUBLE_CROSSING = Scenario(
+    id="dynamic-double-crossing",
+    name="双重动态交叉",
+    description=(
+        "两根矩形立柱以相反相位上下往返横穿走廊，中间直线通路上还有两枚静态圆障碍："
+        "一段通路刚被打开另一段可能正被切断，机器人需要择时通过两道关卡并绕开静桩。"
+    ),
+    width=24.0,
+    height=12.0,
+    start=(2.0, 6.0),
+    goal=(22.0, 6.0),
+    obstacles=[
+        # Two vertical bars sweeping the corridor in OPPOSITE phase (cycle
+        # 15 s, phase shift = half a cycle): while one gap opens the other
+        # closes. Bar sweep speed = 9.0/7.5 = 1.2 m/s — capped at the robot's
+        # v_max: a faster bar overtakes the robot mid-crossing (the engine has
+        # no "stand still and wait" behavior) and every algorithm collides.
+        DynamicRectObstacleSpec(
+            x=8.2,
+            y=0.6,
+            width=1.0,
+            height=2.0,
+            motion=PingPongMotionSpec(axis="y", amplitude=9.0, half_period_s=7.5, phase_s=0.0),
+        ),
+        DynamicRectObstacleSpec(
+            x=15.8,
+            y=0.6,
+            width=1.0,
+            height=2.0,
+            motion=PingPongMotionSpec(axis="y", amplitude=9.0, half_period_s=7.5, phase_s=7.5),
+        ),
+        # Static islands on the straight line between and after the bars.
+        CircleObstacleSpec(cx=12.0, cy=6.0, radius=0.7),
+        CircleObstacleSpec(cx=19.0, cy=6.0, radius=0.6),
+    ],
+    stuck_window_s=15.0,
+    seed=42,
+)
+
+DYNAMIC_PATROL_LINE = Scenario(
+    id="dynamic-patrol-line",
+    name="双巡逻拦截",
+    description=(
+        "两枚动态圆障碍贴着起点到终点的直线上方反相巡逻，进出口车道另有静态圆障碍："
+        "两个巡逻者之间的空隙周期性开合，机器人需择时从下方穿行，并绕开进出口的静桩。"
+    ),
+    width=20.0,
+    height=10.0,
+    start=(2.0, 5.0),
+    goal=(18.0, 5.0),
+    obstacles=[
+        # Two patrollers patrolling ALONG the start-goal corridor, ANTI-PHASE
+        # (cycle 5 s, phase shift = half a cycle): the gap between them opens
+        # and closes. Both tracks sit slightly ABOVE the y=5 line so that a
+        # memoryless APF keeps a tangential slide lane below them — head-on
+        # axial encounters (track exactly on the approach line) stall APF in
+        # a force equilibrium and get it run over.
+        DynamicCircleObstacleSpec(
+            cx=7.0,
+            cy=5.8,
+            radius=0.6,
+            motion=PingPongMotionSpec(axis="x", amplitude=2.5, half_period_s=2.5, phase_s=0.0),
+        ),
+        DynamicCircleObstacleSpec(
+            cx=12.5,
+            cy=6.4,
+            radius=0.6,
+            motion=PingPongMotionSpec(axis="x", amplitude=2.5, half_period_s=2.5, phase_s=2.5),
+        ),
+        # Static lane obstacles at the entrance and before the goal.
+        CircleObstacleSpec(cx=4.5, cy=3.0, radius=0.55),
+        CircleObstacleSpec(cx=16.0, cy=7.0, radius=0.55),
+    ],
+    stuck_window_s=15.0,
+    seed=7,
+)
+
 PRESETS: dict[str, Scenario] = {
     scenario.id: scenario
-    for scenario in [STATIC_BASIC, DYNAMIC_CROSSING, MIXED_CORRIDOR]
+    for scenario in [
+        STATIC_BASIC,
+        STATIC_SLALOM,
+        DYNAMIC_CROSSING,
+        DYNAMIC_DOUBLE_CROSSING,
+        MIXED_CORRIDOR,
+        DYNAMIC_PATROL_LINE,
+    ]
 }
 
 
