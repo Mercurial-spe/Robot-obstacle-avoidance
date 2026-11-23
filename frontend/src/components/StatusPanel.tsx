@@ -1,20 +1,5 @@
 import type { PlanInfoOut, Snapshot } from "../types";
-
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  idle: { label: "待机", className: "bg-slate-700 text-slate-200" },
-  running: { label: "运行中", className: "bg-sky-600 text-white" },
-  paused: { label: "已暂停", className: "bg-amber-600 text-white" },
-  finished: { label: "已结束", className: "bg-emerald-700 text-white" },
-  error: { label: "错误", className: "bg-red-700 text-white" },
-};
-
-const RUN_STATUS_LABELS: Record<string, string> = {
-  running: "行驶中",
-  reached_goal: "到达终点",
-  collided: "发生碰撞",
-  timeout: "超时",
-  stuck: "被困",
-};
+import { RUN_STATUS_LABELS, sessionChip } from "./status";
 
 export function StatusPanel({
   snapshot,
@@ -28,7 +13,7 @@ export function StatusPanel({
   if (!snapshot) {
     return <p className="text-sm text-slate-500">尚无会话。</p>;
   }
-  const statusInfo = STATUS_LABELS[snapshot.status] ?? STATUS_LABELS.idle;
+  const statusInfo = sessionChip(snapshot.status, snapshot.run_status);
   const apfForce = snapshot.apf_force;
   return (
     <div className="space-y-4 text-sm text-slate-300">

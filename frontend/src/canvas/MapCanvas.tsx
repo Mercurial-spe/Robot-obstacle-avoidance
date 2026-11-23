@@ -1,4 +1,5 @@
 import type { KonvaEventObject } from "konva/lib/Node";
+import { Map as MapIcon } from "lucide-react";
 import { Arrow, Circle, Group, Layer, Line, Rect, Shape, Stage, Text } from "react-konva";
 import type { GridInfo, ObstacleState, PlanInfoOut, Snapshot } from "../types";
 import type { LayerToggles } from "../hooks/useLayerToggles";
@@ -95,8 +96,12 @@ export function MapCanvas({
 }) {
   if (!snapshot) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-slate-500">
-        创建会话后开始仿真
+      <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-500">
+        <MapIcon size={28} strokeWidth={1.5} aria-hidden />
+        <p className="text-sm font-medium text-slate-400">尚未创建会话</p>
+        <p className="max-w-56 text-center text-xs leading-relaxed">
+          在顶部选择场景与算法后点击「新建会话」开始仿真
+        </p>
       </div>
     );
   }
@@ -142,11 +147,14 @@ export function MapCanvas({
         y={0}
         width={width}
         height={height}
-        fill="#101826"
-        stroke="#2b3a52"
+        fill="#0d1624"
+        stroke="#31415c"
         strokeWidth={2}
         onClick={editable ? handleArenaClick : undefined}
       />
+      {/* blueprint grid: 1 m minor / 5 m major lines — scale perception with
+          zero motion; two Shapes so major lines read darker */}
+      <GridLayerBackdrop width={width} height={height} S={S} />
       {/* A* occupancy grid + expanded search cells (single Shape each) */}
       {layers.astarGrid && planInfo?.grid && (
         <GridLayer grid={planInfo.grid} height={height} />
@@ -213,6 +221,9 @@ export function MapCanvas({
           dash={[8, 6]}
           opacity={0.9}
           listening={false}
+          shadowColor={LAYER_STYLE.plannedPath.color}
+          shadowBlur={4}
+          shadowOpacity={0.35}
         />
       )}
       {/* executed trajectory */}
@@ -224,6 +235,9 @@ export function MapCanvas({
           lineCap="round"
           lineJoin="round"
           listening={false}
+          shadowColor={LAYER_STYLE.trajectory.color}
+          shadowBlur={6}
+          shadowOpacity={0.45}
         />
       )}
       {/* start & goal (draggable while editing) */}
@@ -244,10 +258,19 @@ export function MapCanvas({
           interaction?.onStartDragEnd?.(pos);
         }}
       />
+      <Text
+        x={startPos[0] - 16}
+        y={startPos[1] + 10}
+        text="START"
+        fill="#8fa3bf"
+        fontSize={10}
+        listening={false}
+      />
       <Circle
         x={goalPos[0]}
         y={goalPos[1]}
         radius={snapshot.robot_radius * S}
+        fill="rgba(74, 222, 128, 0.14)"
         stroke="#4ade80"
         strokeWidth={2}
         dash={[4, 4]}
@@ -262,6 +285,18 @@ export function MapCanvas({
           interaction?.onGoalDragEnd?.(pos);
         }}
       />
+      {/* static halo when the run actually ended at the goal — state, not
+          decoration; no animation faking robot motion (spec forbids) */}
+      {snapshot.run_status === "reached_goal" && (
+        <Circle
+          x={goalPos[0]}
+          y={goalPos[1]}
+          radius={snapshot.robot_radius * S + 6}
+          stroke="rgba(74, 222, 128, 0.55)"
+          strokeWidth={2}
+          listening={false}
+        />
+      )}
       <Text
         x={goalPos[0] - 12}
         y={goalPos[1] + snapshot.robot_radius * S + 6}
@@ -301,6 +336,10 @@ export function MapCanvas({
         fill="#e2e8f0"
         stroke="#f8fafc"
         strokeWidth={1.5}
+        shadowColor="#000000"
+        shadowBlur={8}
+        shadowOpacity={0.4}
+        shadowOffsetY={2}
         listening={false}
       />
       {/* robot heading */}
@@ -336,6 +375,45 @@ export function MapCanvas({
 // Layer pieces
 // ---------------------------------------------------------------------------
 
+/** Static blueprint grid under everything: 1 m lines, every 5th one darker.
+ * Pure presentation from snapshot dimensions — no state, no animation. */
+function GridLayerBackdrop({
+  width,
+  height,
+  S,
+}: {
+  width: number;
+  height: number;
+  S: number;
+}) {
+  return (
+    <Group listening={false}>
+      {[0.05, 0.1].map((alpha, pass) => (
+        <Shape
+          key={pass}
+          listening={false}
+          sceneFunc={(ctx, shape) => {
+            ctx.beginPath();
+            const step = pass === 0 ? 1 : 5;
+            for (let m = step; m * S < width; m += step) {
+              ctx.moveTo(m * S, 0);
+              ctx.lineTo(m * S, height);
+            }
+            for (let m = step; m * S < height; m += step) {
+              ctx.moveTo(0, height - m * S);
+              ctx.lineTo(width, height - m * S);
+            }
+            ctx.closePath();
+            ctx.fillStrokeShape(shape);
+          }}
+          stroke={`rgba(148, 163, 184, ${alpha})`}
+          strokeWidth={1}
+        />
+      ))}
+    </Group>
+  );
+}
+
 function ObstacleBody({
   geom,
   S,
@@ -356,13 +434,17 @@ function ObstacleBody({
   const stroke = selected
     ? "#38bdf8"
     : geom.dynamic
-      ? "#8fa3bf"
-      : "#5a6b88";
+      ? "#9db1d0"
+      : "#64789c";
   const common = {
-    fill: "#3d4a61",
+    fill: "#43506b",
     stroke,
     strokeWidth: selected ? 2.5 : 1,
     dash: geom.dynamic ? [4, 3] : undefined,
+    shadowColor: "#000000",
+    shadowBlur: 6,
+    shadowOpacity: 0.35,
+    shadowOffsetY: 2,
     draggable: editable,
     onClick: onSelect,
     onTap: onSelect,

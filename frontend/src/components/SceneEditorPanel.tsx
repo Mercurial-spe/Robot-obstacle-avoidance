@@ -168,7 +168,7 @@ function SizeInput({
         }}
         className="w-14 rounded border border-slate-700 bg-slate-900 px-1.5 py-1 font-mono text-slate-200 focus:border-sky-500 focus:outline-none"
       />
-      <span className="text-[10px] text-slate-600">m</span>
+      <span className="text-[10px] text-slate-500">m</span>
     </label>
   );
 }

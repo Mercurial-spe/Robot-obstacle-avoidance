@@ -1,1 +1,55 @@
 @import "tailwindcss";
+
+/*
+ * Design tokens & browser surfaces — the parts we did not draw still carry
+ * the design (selection, scrollbars, focus, native controls). This is a dark
+ * projection-first workbench (spec §5), so everything here is tuned for a
+ * dark theme and classroom projector legibility.
+ */
+
+:root {
+  /* Native controls (number spinners, select dropdowns, scrollbars) render
+   * dark instead of blinding white overlays on the dark theme. */
+  color-scheme: dark;
+}
+
+/* Text selection tinted from the sky accent, never browser blue. */
+::selection {
+  background: rgba(14, 165, 233, 0.35);
+  color: #f8fafc;
+}
+
+/* Thin, quiet scrollbars for the dense panels (event log, side panels). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Visible keyboard focus everywhere. Components that set focus:outline-none
+ * on inputs already carry their own focus:border accent; this covers the
+ * buttons and selects that previously had NO focus indicator at all. */
+:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
+}
+
+/* Native dropdown list styling on Windows Chromium, where color-scheme
+ * alone leaves options on a white strip. */
+option {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}

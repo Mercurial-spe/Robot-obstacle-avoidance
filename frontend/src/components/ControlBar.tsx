@@ -57,7 +57,7 @@ export function ControlBar({
   return (
     <div className="flex items-center gap-3">
       <select
-        className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-200"
+        className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-200 transition-colors hover:border-slate-500"
         value={scenarioId}
         onChange={(e) => onScenarioChange(e.target.value)}
       >
@@ -167,7 +167,7 @@ function AlgorithmSelect({
     <label className="flex items-center gap-1.5 text-xs text-slate-400">
       {label}
       <select
-        className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-200"
+        className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-200 transition-colors hover:border-slate-500"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -215,7 +215,7 @@ function NumberField({
           onChange={(e) => onChange(e.target.value)}
           className="w-20 rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 pr-7 font-mono text-sm text-slate-200 placeholder-slate-600 focus:border-sky-500 focus:outline-none"
         />
-        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-600">
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-500">
           {unit}
         </span>
       </span>
