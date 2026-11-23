@@ -14,7 +14,12 @@ import {
 } from "react-konva";
 import type { GridInfo, ObstacleState, PlanInfoOut, Snapshot } from "../types";
 import type { LayerToggles } from "../hooks/useLayerToggles";
-import { LAYER_STYLE, PX_PER_M } from "./layerStyles";
+import {
+  INFLATION_FILL,
+  LAYER_STYLE,
+  PX_PER_M,
+  TRAJECTORY_GRADIENT,
+} from "./layerStyles";
 
 /** Geometry of one obstacle body in world meters, from a snapshot state. */
 type ObstacleGeom =
@@ -167,6 +172,9 @@ export function MapCanvas({
       {/* blueprint grid: 1 m minor / 5 m major lines — scale perception with
           zero motion; two Shapes so major lines read darker */}
       <GridLayerBackdrop width={width} height={height} S={S} />
+      {/* engineering-drawing annotations: 2 m coordinate ticks on all four
+          edges (INSIDE the border) + L-shaped drafting corner marks */}
+      <FieldAnnotations width={width} height={height} S={S} />
       {/* A* occupancy grid + expanded search cells (single Shape each) */}
       {layers.astarGrid && planInfo?.grid && (
         <GridLayer grid={planInfo.grid} height={height} />
@@ -185,6 +193,12 @@ export function MapCanvas({
             <InflatedShape key={i} geom={geom} inflationM={inflationM} S={S} height={height} />
           ))}
         </Group>
+      )}
+      {/* dynamic-obstacle "energy" rings: two static concentric dashed rings
+          with rising radius / falling opacity — multi-layer styling suggests
+          motion without any animation (spec forbids faked movement) */}
+      {layers.obstacleVelocity && geoms.some((geom) => geom.dynamic) && (
+        <DynamicEnergyRings geoms={geoms} S={S} height={height} />
       )}
       {/* obstacle bodies at their CURRENT snapshot positions (draggable while
           editing); listening is only enabled when editable so the idle maps
@@ -242,26 +256,43 @@ export function MapCanvas({
       {layers.plannedPath && snapshot.path.length > 2 && (
         <WaypointDots path={snapshot.path} toPx={toPx} />
       )}
-      {/* executed trajectory */}
+      {/* executed trajectory: one short Line per ~equal-length slice, stroke
+          color lerped teal → sky blue by travel progress (Konva cannot stroke
+          a gradient, so progress is drawn as per-segment solid colors) */}
       {layers.trajectory && snapshot.trajectory.length > 1 && (
-        <Line
-          points={snapshot.trajectory.flatMap(([x, y]) => toPx(x, y))}
-          stroke={LAYER_STYLE.trajectory.color}
-          strokeWidth={2.5}
-          lineCap="round"
-          lineJoin="round"
-          listening={false}
-          shadowColor={LAYER_STYLE.trajectory.color}
-          shadowBlur={6}
-          shadowOpacity={0.45}
-        />
+        <TrajectoryGradient trajectory={snapshot.trajectory} toPx={toPx} />
       )}
       {/* start & goal (draggable while editing) */}
+      {/* start = crosshair reticle: two short lines + hollow circle */}
+      <Group listening={false}>
+        <Line
+          points={[
+            startPos[0] - 12,
+            startPos[1],
+            startPos[0] + 12,
+            startPos[1],
+          ]}
+          stroke="#8fa3bf"
+          strokeWidth={1.5}
+          lineCap="round"
+        />
+        <Line
+          points={[
+            startPos[0],
+            startPos[1] - 12,
+            startPos[0],
+            startPos[1] + 12,
+          ]}
+          stroke="#8fa3bf"
+          strokeWidth={1.5}
+          lineCap="round"
+        />
+      </Group>
       <Circle
         x={startPos[0]}
         y={startPos[1]}
         radius={6}
-        stroke="#8fa3bf"
+        stroke="#a5c0e0"
         strokeWidth={2}
         listening={editable}
         draggable={editable}
@@ -276,12 +307,45 @@ export function MapCanvas({
       />
       <Text
         x={startPos[0] - 16}
-        y={startPos[1] + 10}
+        y={startPos[1] + 14}
         text="START"
         fill="#d4d4d8"
         fontSize={10}
         listening={false}
       />
+      {/* goal = flagpole + double ring (inner solid, outer dashed) */}
+      <Group listening={false}>
+        <Line
+          points={[goalPos[0], goalPos[1], goalPos[0], goalPos[1] - 28]}
+          stroke="#4ade80"
+          strokeWidth={1.5}
+          lineCap="round"
+        />
+        <Line
+          points={[
+            goalPos[0],
+            goalPos[1] - 28,
+            goalPos[0] + 12,
+            goalPos[1] - 23,
+            goalPos[0],
+            goalPos[1] - 18,
+          ]}
+          closed
+          fill="#4ade80"
+          opacity={0.9}
+        />
+      </Group>
+      {/* outer dashed ring (decorative) */}
+      <Circle
+        x={goalPos[0]}
+        y={goalPos[1]}
+        radius={snapshot.robot_radius * S + 5}
+        stroke="rgba(74, 222, 128, 0.55)"
+        strokeWidth={1.5}
+        dash={[5, 5]}
+        listening={false}
+      />
+      {/* inner ring — the drag anchor keeps the original handlers */}
       <Circle
         x={goalPos[0]}
         y={goalPos[1]}
@@ -289,7 +353,6 @@ export function MapCanvas({
         fill="rgba(74, 222, 128, 0.14)"
         stroke="#4ade80"
         strokeWidth={2}
-        dash={[4, 4]}
         listening={editable}
         draggable={editable}
         onDragEnd={(event) => {
@@ -307,9 +370,9 @@ export function MapCanvas({
         <Circle
           x={goalPos[0]}
           y={goalPos[1]}
-          radius={snapshot.robot_radius * S + 6}
+          radius={snapshot.robot_radius * S + 11}
           stroke="rgba(74, 222, 128, 0.55)"
-          strokeWidth={2}
+          strokeWidth={2.5}
           listening={false}
         />
       )}
@@ -369,6 +432,25 @@ export function MapCanvas({
           strokeWidth={1.5}
           cornerRadius={2}
         />
+        {/* 6 vertex studs on the hexagon — PathPlanner-style modular chassis;
+            they rotate with the same real theta as the ring */}
+        {[0, 1, 2, 3, 4, 5].map((k) => {
+          const vertexAngle =
+            ((k * 60 - 90 + (-snapshot.robot.theta * 180) / Math.PI) *
+              Math.PI) /
+            180;
+          const ringR = snapshot.robot_radius * S * 1.5;
+          return (
+            <Circle
+              key={k}
+              x={robotPos[0] + Math.cos(vertexAngle) * ringR}
+              y={robotPos[1] + Math.sin(vertexAngle) * ringR}
+              radius={2.2}
+              fill="#38bdf8"
+              listening={false}
+            />
+          );
+        })}
         {/* heading tick on the hexagon so rotation is readable at a glance */}
         <Line
           points={[
@@ -452,6 +534,238 @@ function GridLayerBackdrop({
       ))}
     </Group>
   );
+}
+
+/** Engineering-drawing field annotations: a coordinate tick label every 2 m on
+ * all four edges (placed just INSIDE the border — outside would overflow the
+ * Stage) plus L-shaped drafting corner marks. Pure presentation from the
+ * snapshot dimensions. */
+function FieldAnnotations({
+  width,
+  height,
+  S,
+}: {
+  width: number;
+  height: number;
+  S: number;
+}) {
+  const metersW = width / S;
+  const metersH = height / S;
+  const ticks: React.ReactNode[] = [];
+  for (let m = 2; m < metersW - 0.25; m += 2) {
+    ticks.push(
+      <Text
+        key={`b${m}`}
+        x={m * S - 10}
+        y={height - 12}
+        width={20}
+        align="center"
+        text={String(m)}
+        fill="#71717a"
+        fontSize={8}
+        listening={false}
+      />,
+      <Text
+        key={`t${m}`}
+        x={m * S - 10}
+        y={2}
+        width={20}
+        align="center"
+        text={String(m)}
+        fill="#71717a"
+        fontSize={8}
+        listening={false}
+      />,
+    );
+  }
+  for (let m = 2; m < metersH - 0.25; m += 2) {
+    ticks.push(
+      <Text
+        key={`l${m}`}
+        x={3}
+        y={height - m * S - 4}
+        text={String(m)}
+        fill="#71717a"
+        fontSize={8}
+        listening={false}
+      />,
+      <Text
+        key={`r${m}`}
+        x={width - 15}
+        y={height - m * S - 4}
+        width={12}
+        align="right"
+        text={String(m)}
+        fill="#71717a"
+        fontSize={8}
+        listening={false}
+      />,
+    );
+  }
+  return (
+    <Group listening={false}>
+      {ticks}
+      {/* four L corner marks in one Shape path */}
+      <Shape
+        listening={false}
+        sceneFunc={(ctx, shape) => {
+          const a = 4;
+          const arm = 14;
+          ctx.beginPath();
+          ctx.moveTo(a, a + arm);
+          ctx.lineTo(a, a);
+          ctx.lineTo(a + arm, a);
+          ctx.moveTo(width - a - arm, a);
+          ctx.lineTo(width - a, a);
+          ctx.lineTo(width - a, a + arm);
+          ctx.moveTo(width - a, height - a - arm);
+          ctx.lineTo(width - a, height - a);
+          ctx.lineTo(width - a - arm, height - a);
+          ctx.moveTo(a + arm, height - a);
+          ctx.lineTo(a, height - a);
+          ctx.lineTo(a, height - a - arm);
+          // no closePath: each corner subpath must stay an open L, closing
+          // would draw a diagonal across the corner
+          ctx.fillStrokeShape(shape);
+        }}
+        stroke="#e4e4e7"
+        strokeWidth={2}
+        lineJoin="miter"
+      />
+    </Group>
+  );
+}
+
+/** Hex → 0-255 triplet for the trajectory gradient lerp. */
+function hexRgb(hex: string): [number, number, number] {
+  const v = parseInt(hex.slice(1), 16);
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+}
+
+/** Linear interpolation between two #rrggbb colors, returned as rgb(). */
+function lerpColor(a: string, b: string, t: number): string {
+  const [r1, g1, b1] = hexRgb(a);
+  const [r2, g2, b2] = hexRgb(b);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const bl = Math.round(b1 + (b2 - b1) * t);
+  return `rgb(${r}, ${g}, ${bl})`;
+}
+
+/** Segment budget for the trajectory gradient — a hard cap keeps the node
+ * count (and redraw cost) bounded no matter how long the run gets. */
+const TRAJECTORY_MAX_SEGMENTS = 40;
+
+/** Executed trajectory as ≤40 equal-arc-length Line slices, each stroked with
+ * a solid color lerped from the departure teal to the arrival sky blue.
+ * Konva cannot stroke a gradient along a path, so progress is expressed by
+ * per-segment solid colors; slices share endpoints so the line reads as one. */
+function TrajectoryGradient({
+  trajectory,
+  toPx,
+}: {
+  trajectory: [number, number][];
+  toPx: (x: number, y: number) => [number, number];
+}) {
+  const pts = trajectory.map(([x, y]) => toPx(x, y));
+  const cum: number[] = [0];
+  for (let i = 1; i < pts.length; i += 1) {
+    cum[i] = cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  }
+  const total = cum[pts.length - 1];
+  if (total <= 0) return null;
+  const segments = Math.max(
+    2,
+    Math.min(TRAJECTORY_MAX_SEGMENTS, Math.ceil(total / 10)),
+  );
+  let span = 0; // polyline span holding the current sample length
+  const pointAt = (len: number): [number, number] => {
+    while (span < pts.length - 2 && cum[span + 1] < len) span += 1;
+    const segLen = cum[span + 1] - cum[span] || 1;
+    const t = (len - cum[span]) / segLen;
+    return [
+      pts[span][0] + (pts[span + 1][0] - pts[span][0]) * t,
+      pts[span][1] + (pts[span + 1][1] - pts[span][1]) * t,
+    ];
+  };
+  const slices: React.ReactNode[] = [];
+  for (let j = 0; j < segments; j += 1) {
+    const l0 = (total * j) / segments;
+    const l1 = (total * (j + 1)) / segments;
+    const head = pointAt(l0);
+    const points: number[] = [head[0], head[1]];
+    // keep the real waypoints that fall inside this slice so corners stay sharp
+    for (let i = span + 1; i < pts.length && cum[i] < l1; i += 1) {
+      points.push(pts[i][0], pts[i][1]);
+    }
+    const tail = pointAt(l1);
+    points.push(tail[0], tail[1]);
+    const color = lerpColor(
+      TRAJECTORY_GRADIENT.start,
+      TRAJECTORY_GRADIENT.end,
+      segments === 1 ? 0 : j / (segments - 1),
+    );
+    slices.push(
+      <Line
+        key={j}
+        points={points}
+        stroke={color}
+        strokeWidth={2.5}
+        lineCap="round"
+        lineJoin="round"
+        listening={false}
+        shadowColor={color}
+        shadowBlur={6}
+        shadowOpacity={0.45}
+      />,
+    );
+  }
+  return <Group listening={false}>{slices}</Group>;
+}
+
+/** Two concentric dashed rings around each DYNAMIC obstacle: radius grows and
+ * opacity falls outward, a static multi-layer styling that reads as "this body
+ * is energized / moving" without any animation (spec forbids faked motion). */
+function DynamicEnergyRings({
+  geoms,
+  S,
+  height,
+}: {
+  geoms: ObstacleGeom[];
+  S: number;
+  height: number;
+}) {
+  const rings: React.ReactNode[] = [];
+  geoms.forEach((geom, i) => {
+    if (!geom.dynamic) return;
+    const center = geomCenterPx(geom, S, height);
+    if (!center) return;
+    const base =
+      geom.shape === "circle"
+        ? geom.radius * S
+        : (Math.hypot(geom.width, geom.height) / 2) * S;
+    const offsets: [number, number][] = [
+      [8, 0.4],
+      [16, 0.18],
+    ];
+    for (const [offset, opacity] of offsets) {
+      rings.push(
+        <Circle
+          key={`${i}-${offset}`}
+          x={center[0]}
+          y={center[1]}
+          radius={base + offset}
+          stroke="#f472b6"
+          strokeWidth={1}
+          dash={[3, 6]}
+          opacity={opacity}
+          listening={false}
+        />,
+      );
+    }
+  });
+  if (rings.length === 0) return null;
+  return <Group listening={false}>{rings}</Group>;
 }
 
 /** PathPlanner-style vertex markers on the planned path, thinned to ≤40 dots. */
@@ -549,8 +863,8 @@ function InflatedShape({
   S: number;
   height: number;
 }) {
-  const fill = "rgba(255, 255, 255, 0.09)";
-  const stroke = "rgba(255, 255, 255, 0.32)";
+  const fill = INFLATION_FILL;
+  const stroke = LAYER_STYLE.inflation.color;
   if (geom.shape === "circle") {
     return (
       <Circle

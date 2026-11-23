@@ -47,6 +47,17 @@
   outline-offset: 1px;
 }
 
+/* Shared card surface for the dense info panels (status tiles, event log,
+ * planning metadata). Declared in the components layer so per-element
+ * utilities (bg-*, border-*) can still override individual sides. */
+@layer components {
+  .panel-card {
+    border-radius: 0.375rem;
+    border: 1px solid #27272a; /* zinc-800 */
+    background-color: rgba(24, 24, 27, 0.6); /* zinc-900/60 */
+  }
+}
+
 /* Native dropdown list styling on Windows Chromium, where color-scheme
  * alone leaves options on a white strip. */
 option {

@@ -1,6 +1,7 @@
+import { ArrowRight } from "lucide-react";
 import { LAYER_IDS } from "../hooks/useLayerToggles";
 import type { LayerId, LayerToggles } from "../hooks/useLayerToggles";
-import { LAYER_STYLE } from "../canvas/layerStyles";
+import { INFLATION_FILL, LAYER_STYLE } from "../canvas/layerStyles";
 
 interface LegendProps {
   layers: LayerToggles;
@@ -57,7 +58,7 @@ function Swatch({
     return (
       <span
         className="inline-block h-3 w-4 rounded-sm border border-zinc-500"
-        style={{ backgroundColor: "rgba(255, 255, 255, 0.22)" }}
+        style={{ backgroundColor: INFLATION_FILL, borderColor: color }}
       />
     );
   }
@@ -81,12 +82,8 @@ function Swatch({
   }
   // arrow
   return (
-    <span
-      className="inline-block text-[10px] leading-none"
-      style={{ color }}
-      aria-hidden
-    >
-      ➜
+    <span className="inline-block leading-none" style={{ color }} aria-hidden>
+      <ArrowRight size={11} strokeWidth={2.5} />
     </span>
   );
 }

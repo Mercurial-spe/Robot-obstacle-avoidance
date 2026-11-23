@@ -1,3 +1,5 @@
+import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
+import { motion } from "motion/react";
 import type { EventEntry } from "../hooks/useEventLog";
 
 const KIND_STYLES: Record<EventEntry["kind"], string> = {
@@ -7,34 +9,59 @@ const KIND_STYLES: Record<EventEntry["kind"], string> = {
   error: "text-red-400",
 };
 
-const KIND_DOTS: Record<EventEntry["kind"], string> = {
-  info: "bg-zinc-500",
-  success: "bg-emerald-500",
-  warn: "bg-amber-500",
-  error: "bg-red-500",
+/** lucide icon per event kind, colored by the same semantics as the text. */
+const KIND_ICONS: Record<EventEntry["kind"], typeof Info> = {
+  info: Info,
+  success: CheckCircle2,
+  warn: AlertTriangle,
+  error: XCircle,
+};
+
+const KIND_ICON_COLORS: Record<EventEntry["kind"], string> = {
+  info: "text-zinc-400",
+  success: "text-emerald-400",
+  warn: "text-amber-400",
+  error: "text-red-400",
 };
 
 /** Rolling 事件/状态 log: replans, trap/collision/timeout notices and backend
- * messages, newest first. Entries come from the snapshot stream only. */
+ * messages, newest first. Entries come from the snapshot stream only. Only
+ * NEWLY mounted entries fade in (120ms) — the keys keep existing rows mounted,
+ * so a fresh event never replays the whole list. */
 export function EventsPanel({ entries }: { entries: EventEntry[] }) {
   return (
-    <div className="rounded-md border border-zinc-800 bg-zinc-900/60 p-3">
+    <div className="panel-card p-3">
       <h3 className="mb-2 text-xs font-semibold text-zinc-400">事件记录</h3>
       {entries.length === 0 ? (
-        <p className="text-xs text-zinc-500">暂无事件。</p>
+        <p className="text-xs leading-relaxed text-zinc-500">
+          暂无事件 · 运行会话后，重规划、碰撞、超时与结局信息会显示在这里。
+        </p>
       ) : (
         <ul className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
-          {entries.map((entry) => (
-            <li key={entry.key} className="flex items-start gap-2 text-xs">
-              <span
-                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${KIND_DOTS[entry.kind]}`}
-              />
-              <span className="shrink-0 font-mono text-[10px] text-zinc-500">
-                {entry.sim_time.toFixed(1)}s
-              </span>
-              <span className={KIND_STYLES[entry.kind]}>{entry.text}</span>
-            </li>
-          ))}
+          {entries.map((entry) => {
+            const Icon = KIND_ICONS[entry.kind];
+            return (
+              <motion.li
+                key={entry.key}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.12, ease: "easeOut" }}
+                className="flex items-start gap-2 text-xs"
+              >
+                <Icon
+                  size={12}
+                  aria-hidden
+                  className={`mt-0.5 shrink-0 ${KIND_ICON_COLORS[entry.kind]}`}
+                />
+                <span className="w-12 shrink-0 text-right font-mono text-[10px] tabular-nums text-zinc-500">
+                  {entry.sim_time.toFixed(1)}s
+                </span>
+                <span className={`min-w-0 ${KIND_STYLES[entry.kind]}`}>
+                  {entry.text}
+                </span>
+              </motion.li>
+            );
+          })}
         </ul>
       )}
     </div>

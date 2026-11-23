@@ -16,20 +16,34 @@ export interface LayerStyle {
 export const LAYER_STYLE: Record<LayerId, LayerStyle> = {
   inflation: {
     label: "膨胀区",
-    color: "rgba(148, 163, 184, 0.55)",
+    color: "rgba(125, 211, 252, 0.5)",
     kind: "fill",
   },
   astarGrid: {
     label: "A* 栅格与搜索节点",
-    color: "#818cf8",
+    color: "#6366f1",
     kind: "dot",
   },
-  plannedPath: { label: "规划路径", color: "#f5b04c", kind: "line" },
+  plannedPath: { label: "规划路径", color: "#fbbf24", kind: "line" },
   trajectory: { label: "实际轨迹", color: "#39c6b0", kind: "line" },
   robotHeading: { label: "机器人朝向", color: "#f87171", kind: "arrow" },
   obstacleVelocity: { label: "动态障碍物速度", color: "#f472b6", kind: "arrow" },
-  apfForce: { label: "APF 力", color: "#a78bfa", kind: "arrow" },
+  apfForce: { label: "APF 力", color: "#c084fc", kind: "arrow" },
 };
+
+/**
+ * Executed-trajectory progress gradient: stroke color lerps from the teal
+ * P0 accent (departure) to sky blue (arrival). Konva cannot stroke a single
+ * Line with a gradient, so MapCanvas splits the polyline into short segments
+ * and lerps per segment; the legend swatch keeps the departure color.
+ */
+export const TRAJECTORY_GRADIENT = {
+  start: "#39c6b0",
+  end: "#38bdf8",
+} as const;
+
+/** Arena tint of the inflation silhouette (legend swatch shows the stroke). */
+export const INFLATION_FILL = "rgba(125, 211, 252, 0.1)";
 
 export const PX_PER_M = 48;
 

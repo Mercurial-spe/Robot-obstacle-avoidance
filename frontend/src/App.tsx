@@ -217,6 +217,8 @@ export default function App() {
               >
                 <SingleSessionView
                   session={sessionSingle}
+                  algorithms={algorithms}
+                  algorithmId={algorithmSingle}
                   layers={layers}
                   toggleLayer={toggleLayer}
                 />

@@ -5,6 +5,11 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -39,6 +44,15 @@ function algoDisplayName(id: string): string {
   return ALGO_LABEL_FALLBACK[id] ?? id;
 }
 
+/** Shared dark tooltip surface (#18181b) for every chart in this panel. */
+const TOOLTIP_STYLE = {
+  backgroundColor: "#18181b",
+  border: "1px solid #3f3f46",
+  borderRadius: 6,
+  fontSize: 12,
+  color: "#e2e8f0",
+} as const;
+
 interface ChartRow {
   name: string;
   /** Wire id of the algorithm this row aggregates (for stable colors). */
@@ -49,9 +63,10 @@ interface ChartRow {
 /**
  * 批量实验 dashboard (bottom panel, both views): preset scenario + algorithm
  * multiselect (default astar+apf) + seed count (seeds auto-generated 1..N) →
- * POST /api/experiments/batch → Recharts bar charts. Failed outcomes are
- * shown as-is (collided/timeout/stuck chart) — never hidden or converted.
- * The last result is cached in state until the next run.
+ * POST /api/experiments/batch → Recharts bar charts + a normalized radar
+ * comparison. Failed outcomes are shown as-is (collided/timeout/stuck chart)
+ * — never hidden or converted. The last result is cached in state until the
+ * next run.
  */
 export function ExperimentPanel({
   scenarios,
@@ -102,6 +117,7 @@ export function ExperimentPanel({
       simTime: Number(s.mean_sim_time.toFixed(2)),
       distance: Number(s.mean_distance.toFixed(2)),
       collisions: Number(s.mean_collisions.toFixed(2)),
+      planningMs: Number(s.mean_planning_ms.toFixed(1)),
       runs: s.runs,
     }));
   }, [result]);
@@ -115,6 +131,50 @@ export function ExperimentPanel({
       }
       return row;
     });
+  }, [result]);
+
+  /**
+   * 雷达对比数据：五个维度各算法归一化到 0-1（1 = 该维度最优）。
+   *
+   * 归一化公式（防除零）：
+   * - 成功率：本身已是 0-1（0-100% ÷ 100），直接使用，不做相对归一化；
+   * - 其余「越低越好」的指标（平均用时 / 行驶距离 / 碰撞 / 重规划）：
+   *     在参与算法中取该指标的 min/max，norm = (x - min) / (max - min)，
+   *     再取反 score = 1 - norm（低者得 1，高者得 0）；
+   * - 除零保护：当 max === min（所有算法该指标持平）时，score 直接记 1，
+   *     不做除法，也不拉开虚假差距。
+   */
+  const radarData = useMemo<ChartRow[]>(() => {
+    if (!result) return [];
+    const summary = result.summary;
+    if (summary.length === 0) return [];
+    const lowerIsBetter = [
+      { metric: "平均用时", get: (s: ExperimentSummaryOut) => s.mean_sim_time },
+      { metric: "行驶距离", get: (s: ExperimentSummaryOut) => s.mean_distance },
+      { metric: "低碰撞", get: (s: ExperimentSummaryOut) => s.mean_collisions },
+      { metric: "低重规划", get: (s: ExperimentSummaryOut) => s.mean_replans },
+    ];
+    const data: ChartRow[] = [
+      {
+        name: "成功率",
+        ...Object.fromEntries(summary.map((s) => [s.algorithm, Number(s.success_rate.toFixed(3))])),
+      },
+    ];
+    for (const dim of lowerIsBetter) {
+      const values = summary.map(dim.get);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const row: ChartRow = { name: dim.metric };
+      for (const s of summary) {
+        const x = dim.get(s);
+        // max === min 时全员记 1（持平即同优），避免除零。
+        row[s.algorithm] = Number(
+          (max === min ? 1 : 1 - (x - min) / (max - min)).toFixed(3),
+        );
+      }
+      data.push(row);
+    }
+    return data;
   }, [result]);
 
   const nameById = (id: string) =>
@@ -198,6 +258,49 @@ export function ExperimentPanel({
 
           {result && (
             <>
+              {/* 每算法一张「大数字」汇总卡：身份色竖条 + 成功率大数字 +
+                  runs 数 + 平均用时。成功率着色：≥80% 绿、<50% 红、之间琥珀。 */}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {result.summary.map((s) => {
+                  const rate = s.success_rate * 100;
+                  const rateColor =
+                    rate >= 80
+                      ? "text-emerald-400"
+                      : rate < 50
+                        ? "text-red-400"
+                        : "text-amber-400";
+                  return (
+                    <div
+                      key={s.algorithm}
+                      className="relative overflow-hidden rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2.5"
+                    >
+                      <span
+                        aria-hidden
+                        className="absolute inset-y-0 left-0 w-1"
+                        style={{ backgroundColor: algoColor(s.algorithm) }}
+                      />
+                      <div className="flex items-baseline justify-between gap-2 pl-2">
+                        <span className="truncate text-xs font-medium text-zinc-300">
+                          {nameById(s.algorithm)}
+                        </span>
+                        <span className="shrink-0 text-[10px] text-zinc-500">
+                          {s.runs} runs
+                        </span>
+                      </div>
+                      <p
+                        className={`pl-2 font-mono text-2xl font-semibold tabular-nums ${rateColor}`}
+                      >
+                        {rate.toFixed(0)}%
+                      </p>
+                      <p className="pl-2 text-[10px] text-zinc-500">
+                        平均用时 {s.mean_sim_time.toFixed(2)} s · 平均规划{" "}
+                        {s.mean_planning_ms.toFixed(0)} ms
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
               {/* shared algorithm identity legend: color follows the algorithm,
                   never its rank — charts below reuse the same fills */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -215,8 +318,9 @@ export function ExperimentPanel({
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <MetricChart
+                  chartId="success-rate"
                   title="成功率 (%)"
                   data={rows}
                   dataKey="successRate"
@@ -224,30 +328,47 @@ export function ExperimentPanel({
                   valueFormatter={(v) => `${v}%`}
                 />
                 <MetricChart
+                  chartId="sim-time"
                   title="平均用时 (s)"
                   data={rows}
                   dataKey="simTime"
                   valueFormatter={(v) => `${v} s`}
                 />
                 <MetricChart
+                  chartId="distance"
                   title="平均行驶距离 (m)"
                   data={rows}
                   dataKey="distance"
                   valueFormatter={(v) => `${v} m`}
                 />
                 <MetricChart
+                  chartId="collisions"
                   title="平均碰撞次数"
                   data={rows}
                   dataKey="collisions"
                   valueFormatter={(v) => `${v} 次`}
                 />
                 <MetricChart
+                  chartId="planning-ms"
+                  title="平均规划耗时 (ms)"
+                  data={rows}
+                  dataKey="planningMs"
+                  valueFormatter={(v) => `${v} ms`}
+                />
+                <MetricChart
+                  chartId="failures"
                   title="失败次数（碰撞/超时/被困）"
                   data={outcomeRows}
                   series={OUTCOME_SERIES}
                   valueFormatter={(v) => `${v} 次`}
                 />
               </div>
+
+              <RadarCompare
+                data={radarData}
+                algorithmIds={result.algorithms}
+                nameById={nameById}
+              />
 
               <p className="text-[11px] text-zinc-500">
                 导出目录：<span className="font-mono text-zinc-400">{result.output_dir}</span>
@@ -271,12 +392,14 @@ export function ExperimentPanel({
   );
 }
 
-/** One bar chart. Single-metric mode: one bar per algorithm colored by
- * ALGO_COLORS (identity follows the algorithm). Series mode (failure counts):
- * fixed outcome colors with a legend. Thin rounded bars, recessive grid,
+/** One bar chart. Single-metric mode: one bar per algorithm filled with a
+ * per-algorithm vertical gradient (defs linearGradient, id namespaced by
+ * chartId so charts never collide). Series mode (failure counts): fixed
+ * outcome colors with a legend. Thin rounded bars, recessive grid,
  * per-mark hover tooltip. */
 function MetricChart({
   title,
+  chartId,
   data,
   dataKey,
   series,
@@ -284,17 +407,77 @@ function MetricChart({
   valueFormatter,
 }: {
   title: string;
+  /** Unique id prefix for this chart's gradient defs. */
+  chartId: string;
   data: ChartRow[];
   dataKey?: string;
   series?: readonly { key: string; label: string; color: string }[];
   yMax?: number;
   valueFormatter: (value: number) => string;
 }) {
+  if (series) {
+    return (
+      <div className="panel-card p-3">
+        <h4 className="mb-1 truncate text-xs font-medium text-zinc-300">{title}</h4>
+        <ResponsiveContainer width="100%" height={185}>
+          <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
+            <CartesianGrid stroke="#27272a" vertical={false} />
+            <XAxis
+              dataKey="name"
+              tick={{ fill: "#a1a1aa", fontSize: 11 }}
+              stroke="#3f3f46"
+            />
+            <YAxis
+              tick={{ fill: "#71717a", fontSize: 10 }}
+              stroke="#3f3f46"
+              allowDecimals={false}
+            />
+            <Tooltip
+              cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+              contentStyle={TOOLTIP_STYLE}
+              formatter={(value) => valueFormatter(Number(value))}
+            />
+            <Legend
+              iconSize={10}
+              wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }}
+            />
+            {series.map((s) => (
+              <Bar
+                key={s.key}
+                dataKey={s.label}
+                fill={s.color}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={36}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+  const gradientIds = new Set(
+    data.map((row) => String(row.algoId ?? row.name)),
+  );
   return (
-    <div className="rounded-md border border-zinc-800 bg-zinc-900/60 p-3">
+    <div className="panel-card p-3">
       <h4 className="mb-1 truncate text-xs font-medium text-zinc-300">{title}</h4>
       <ResponsiveContainer width="100%" height={185}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
+          <defs>
+            {[...gradientIds].map((id) => (
+              <linearGradient
+                key={id}
+                id={`bar-${chartId}-${id}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor={algoColor(id)} stopOpacity={0.95} />
+                <stop offset="100%" stopColor={algoColor(id)} stopOpacity={0.55} />
+              </linearGradient>
+            ))}
+          </defs>
           <CartesianGrid stroke="#27272a" vertical={false} />
           <XAxis
             dataKey="name"
@@ -309,39 +492,73 @@ function MetricChart({
           />
           <Tooltip
             cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
-            contentStyle={{
-              backgroundColor: "#18181b",
-              border: "1px solid #3f3f46",
-              borderRadius: 6,
-              fontSize: 12,
-              color: "#e2e8f0",
-            }}
+            contentStyle={TOOLTIP_STYLE}
             formatter={(value) => valueFormatter(Number(value))}
           />
-          {series ? (
-            <>
-              <Legend
-                iconSize={10}
-                wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }}
-              />
-              {series.map((s) => (
-                <Bar
-                  key={s.key}
-                  dataKey={s.label}
-                  fill={s.color}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={36}
+          <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} maxBarSize={36}>
+            {data.map((row, i) => {
+              const algoId = String(row.algoId ?? row.name);
+              return (
+                <Cell
+                  key={i}
+                  fill={`url(#bar-${chartId}-${algoId})`}
+                  stroke={algoColor(algoId)}
                 />
-              ))}
-            </>
-          ) : (
-            <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} maxBarSize={36}>
-              {data.map((row, i) => (
-                <Cell key={i} fill={algoColor(row.algoId ?? row.name)} />
-              ))}
-            </Bar>
-          )}
+              );
+            })}
+          </Bar>
         </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** 雷达对比图：五个维度（成功率 / 平均用时 / 行驶距离 / 低碰撞 / 低重规划）
+ * 各算法归一化到 0-1（公式见 radarData 的注释）。每个算法一条多边形，
+ * algoColor 描边 + 0.15 透明度填充；0-1 径向轴不显示刻度以免噪音。 */
+function RadarCompare({
+  data,
+  algorithmIds,
+  nameById,
+}: {
+  data: ChartRow[];
+  algorithmIds: string[];
+  nameById: (id: string) => string;
+}) {
+  if (data.length === 0) return null;
+  return (
+    <div className="panel-card p-3">
+      <h4 className="mb-1 text-xs font-medium text-zinc-300">
+        五维归一化对比（1 = 该维度最优，成功率直接取 0–1）
+      </h4>
+      <ResponsiveContainer width="100%" height={280}>
+        <RadarChart data={data} cx="50%" cy="50%" outerRadius="72%">
+          <PolarGrid stroke="#27272a" />
+          <PolarAngleAxis
+            dataKey="name"
+            tick={{ fill: "#a1a1aa", fontSize: 11 }}
+          />
+          <PolarRadiusAxis domain={[0, 1]} tick={false} axisLine={false} />
+          {algorithmIds.map((id) => (
+            <Radar
+              key={id}
+              name={nameById(id)}
+              dataKey={id}
+              stroke={algoColor(id)}
+              strokeWidth={2}
+              fill={algoColor(id)}
+              fillOpacity={0.15}
+            />
+          ))}
+          <Tooltip
+            contentStyle={TOOLTIP_STYLE}
+            formatter={(value) => Number(value).toFixed(2)}
+          />
+          <Legend
+            iconSize={10}
+            wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }}
+          />
+        </RadarChart>
       </ResponsiveContainer>
     </div>
   );
