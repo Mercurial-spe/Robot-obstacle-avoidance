@@ -49,3 +49,25 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 3: P1+P2 全系统：多智能体实现
+<!-- trellis-session: v=2 fp=357285f5a287a05b -->
+
+**Date**: 2026-11-23
+**Task**: P1+P2 全系统：多智能体实现
+**Branch**: `main`
+
+### Summary
+
+6 子代理工作流完成 P1+P2：动态障碍物（往返/折线、子步碰撞）、dynamic-crossing/mixed-corridor 场景、A* 重规划、APF（局部极小诚实记录）、Hybrid（触发条件文档化）、批量实验 CSV/JSON 导出、并排对跑/单车详情/场景编辑/图层/Recharts 仪表盘。验证代理修复 3 个问题；独立复核 uv run pytest 44 通过、npm run build 通过、3 算法×3 种子批量实验全链路成功并导出。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2d2b27f` | docs: rewrite README for the full workbench |
+
+### Status
+
+[OK] **Completed**
